@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+body { @apply bg-gradient-to-b from-brand-indigo via-black to-black text-white; }
+.badge { @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold border border-white/20 bg-white/10; }
+.callout { @apply rounded-2xl border border-brand-gold/60 bg-brand-gold/10 p-4; }
+.btn-primary { @apply rounded-2xl bg-white text-black font-semibold px-6 py-3 hover:bg-white/90; }
+.btn-outline { @apply rounded-2xl border border-white/30 px-6 py-3 hover:bg-white/10; }
