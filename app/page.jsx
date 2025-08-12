@@ -1,6 +1,5 @@
-/* build: v1 */
 'use client';
-import React, { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import TimeBox from '../components/TimeBox';
 
 const CAMPAIGN = 'rar_earlybird_2025';
@@ -8,7 +7,7 @@ const SITE_URL = typeof window !== 'undefined'
   ? window.location.origin
   : (process.env.NEXT_PUBLIC_SITE_URL || 'https://rest-as-resistance.vercel.app');
 
-function withUTM(url: string, source='website', medium='site', content='primary_cta') {
+function withUTM(url, source='website', medium='site', content='primary_cta') {
   const u = new URL(url, SITE_URL);
   u.searchParams.set('utm_source', source);
   u.searchParams.set('utm_medium', medium);
@@ -16,6 +15,7 @@ function withUTM(url: string, source='website', medium='site', content='primary_
   u.searchParams.set('utm_content', content);
   return u.toString();
 }
+
 function podiaCheckoutUrl(content='checkout_cta') {
   const base = process.env.NEXT_PUBLIC_PODIA_BASE_URL || '#';
   try {
@@ -25,9 +25,12 @@ function podiaCheckoutUrl(content='checkout_cta') {
     u.searchParams.set('utm_campaign', CAMPAIGN);
     u.searchParams.set('utm_content', content);
     return u.toString();
-  } catch { return '#'; }
+  } catch {
+    return '#';
+  }
 }
-function getTimeLeft(d: Date) {
+
+function getTimeLeft(d) {
   const t = Math.max(0, d.getTime() - Date.now());
   return {
     days: Math.floor(t / 86400000),
@@ -38,13 +41,11 @@ function getTimeLeft(d: Date) {
 }
 
 export default function Page() {
-  // Early‑bird ends Sept 15, 2025 11:59 PM PT (06:59:59 UTC Sept 16)
   const earlyBirdEnd = useMemo(() => new Date('2025-09-16T06:59:59.000Z'), []);
   const [timeLeft, setTimeLeft] = useState(getTimeLeft(earlyBirdEnd));
   useEffect(() => { const id = setInterval(() => setTimeLeft(getTimeLeft(earlyBirdEnd)), 1000); return () => clearInterval(id); }, [earlyBirdEnd]);
   const isEarlyBird = Date.now() < earlyBirdEnd.getTime();
 
-  // Fast‑action bonus (per‑visitor 72h)
   const [fabLeft, setFabLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   useEffect(() => {
     const key = 'rar_fab_start';
@@ -65,7 +66,6 @@ export default function Page() {
     return () => clearInterval(id);
   }, []);
 
-  // Pricing
   const BASE = { t1: 7900, t2: 10500, t3: 12900 };
   const EB = { t1: -300, t2: -400, t3: -500 };
   const prices = {
@@ -74,49 +74,26 @@ export default function Page() {
     t3: BASE.t3 + (isEarlyBird ? EB.t3 : 0),
   };
 
-  const [selectedTier, setSelectedTier] = useState<'t1'|'t2'|'t3'>('t2');
-  const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', notes: '' });
+  const [selectedTier, setSelectedTier] = useState('t2');
+  const [form, setForm] = useState({ name: '', email: '' });
 
-  const ADDONS = [
-    { key: 't1_private_room', label: 'Private Room Upgrade (Essential)', price: 1200, tiers: ['t1'] },
-    { key: 't2_private_room', label: 'Private Room Upgrade (Private Indulgence)', price: 900, tiers: ['t2'] },
-    { key: 't3_culinary', label: 'Luxury Culinary Night (VIP)', price: 800, tiers: ['t3'] },
-    { key: 'airfare', label: 'Round‑Trip Airfare (estimate)', price: 1800, tiers: ['t1','t2','t3'] },
-    { key: 'post_trip_coaching', label: 'Post‑Trip Integration Coaching (3 sessions)', price: 600, tiers: ['t1','t2','t3'] },
-    { key: 'pair_discount', label: 'Bring a Friend / Daughter (pair credit)', price: -300, tiers: ['t1','t2','t3'] },
-  ];
-  function addOnsForTier(tier: 't1'|'t2'|'t3') { return ADDONS.filter(a => a.tiers.includes(tier)); }
-  function addOnTotal(tier: 't1'|'t2'|'t3') {
-    return addOnsForTier(tier).filter(a => selectedAddOns.includes(a.key)).reduce((s,a)=>s+a.price,0);
-  }
-
-  async function submitForm(e: React.FormEvent) {
+  async function submitForm(e) {
     e.preventDefault();
     try {
       const res = await fetch('/api/inquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, tier: selectedTier, addOns: selectedAddOns }),
+        body: JSON.stringify({ ...form, tier: selectedTier }),
       });
       if (!res.ok) throw new Error('Network');
       alert('Thanks! We received your inquiry and will email you shortly.');
     } catch {
-      // fallback mailto WITHOUT backticks
       const subject = encodeURIComponent('RAR Japan Inquiry — ' + selectedTier);
-      const body = encodeURIComponent(
-        'Name: ' + form.name + '\n' +
-        'Email: ' + form.email + '\n' +
-        'Phone: ' + form.phone + '\n' +
-        'AddOns: ' + selectedAddOns.join(', ') + '\n' +
-        'Notes: ' + form.notes
-      );
+      const body = encodeURIComponent('Name: ' + form.name + '\nEmail: ' + form.email);
       const email = (process.env.EMAIL_CONTACT || 'info@incluu.us');
       window.location.href = 'mailto:' + email + '?subject=' + subject + '&body=' + body;
     }
   }
-
-  const podiaURL = podiaCheckoutUrl('podia_deposit_button');
 
   return (
     <div className="min-h-screen w-full">
@@ -130,7 +107,6 @@ export default function Page() {
         </div>
       </header>
 
-      {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0" aria-hidden>
           <img src="https://images.unsplash.com/photo-1470115636492-6d2b56f9146e?q=80&w=1600&auto=format&fit=crop" alt="Misty forest" className="h-full w-full object-cover opacity-30" />
@@ -149,7 +125,6 @@ export default function Page() {
         </div>
       </section>
 
-      {/* Early‑Bird strip */}
       <section className="py-6 border-y border-white/10 bg-white/5">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 flex-wrap">
           <div className="text-sm">
@@ -165,42 +140,25 @@ export default function Page() {
         </div>
       </section>
 
-      {/* Reserve (shortened) */}
       <section id="reserve" className="py-16 border-t border-white/10">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
             <h2 className="text-3xl font-semibold">Reserve Your Spot</h2>
-            <p className="text-white/70 mt-2">Two Kamakura nights are at Sakura‑Sakura — an intimate heritage home with only three rooms reserved entirely for our group.</p>
-
             <form onSubmit={submitForm} className="space-y-4 mt-6">
               <div>
                 <label className="block text-sm text-white/80">Selected Tier</label>
-                <select
-                  value={selectedTier}
-                  onChange={(e) => setSelectedTier(e.target.value as 't1'|'t2'|'t3')}
-                  className="mt-1 w-full rounded-xl bg-black/30 border border-white/20 px-4 py-3"
-                >
+                <select value={selectedTier} onChange={(e)=>setSelectedTier(e.target.value)} className="mt-1 w-full rounded-xl bg-black/30 border border-white/20 px-4 py-3">
                   <option value="t1">Tier 1 – Essential — ${prices.t1.toLocaleString()}</option>
                   <option value="t2">Tier 2 – Private Indulgence — ${prices.t2.toLocaleString()}</option>
                   <option value="t3">Tier 3 – VIP Sanctuary — ${prices.t3.toLocaleString()}</option>
                 </select>
               </div>
-
-              <div className="rounded-2xl border border-white/10 p-4 bg-black/20">
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold">Estimated Total</div>
-                  <div className="text-2xl font-bold">${prices[selectedTier].toLocaleString()}</div>
-                </div>
-                <div className="text-xs text-white/60 mt-1">Airfare is estimated and finalized upon booking if selected.</div>
-              </div>
-
               <div><label className="block text-sm text-white/80">Full Name</label>
                 <input required value={form.name} onChange={(e)=>setForm({...form,name:e.target.value})} className="mt-1 w-full rounded-xl bg-black/30 border border-white/20 px-4 py-3" />
               </div>
               <div><label className="block text-sm text-white/80">Email</label>
                 <input type="email" required value={form.email} onChange={(e)=>setForm({...form,email:e.target.value})} className="mt-1 w-full rounded-xl bg-black/30 border border-white/20 px-4 py-3" />
               </div>
-
               <button type="submit" className="w-full btn-primary">Send Inquiry</button>
               <a href={podiaCheckoutUrl('podia_deposit_button')} target="_blank" rel="noreferrer" className="block text-center rounded-2xl border border-brand-gold text-brand-gold px-4 py-3 font-semibold hover:bg-brand-gold/10 mt-2">
                 Or Proceed to Secure Deposit (Podia)
