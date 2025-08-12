@@ -1,0 +1,26 @@
+name: Repo Reset
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  wipe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Remove all files except this workflow
+        run: |
+          shopt -s extglob
+          rm -rf !(\.github)
+          rm -rf .github/!(workflows)
+          rm -rf .github/workflows/!(repo-reset.yml)
+      - name: Commit wipe
+        run: |
+          git config user.name "repo-reset-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Repo reset: keep only workflow" || echo "Nothing to commit"
+          git push
